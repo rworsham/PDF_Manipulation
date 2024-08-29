@@ -2,16 +2,14 @@ import pytesseract
 from pdf2image import convert_from_path
 import PyPDF2
 import os
+import csv
 
-
-def process_pdf_in_batches(pdf_path, output_dir, text_output_file, batch_size=10, dpi=600):
+def process_pdf_in_batches(pdf_path, output_dir, csv_output_file, batch_size, dpi):
     os.makedirs(output_dir, exist_ok=True)
 
-
     start_page = 0
-    print("count pages")
-    file = open('SHL_Cookbook_v3.pdf',
-                'rb')
+    print("Counting pages")
+    file = open(pdf_path, 'rb')
 
     pdfreader = PyPDF2.PdfReader(file)
 
@@ -19,9 +17,12 @@ def process_pdf_in_batches(pdf_path, output_dir, text_output_file, batch_size=10
 
     print(f"Total Pages: {total_pages}")
 
-    print("count pages fin")
+    print("Counting pages finished")
 
-    with open(text_output_file, 'w', encoding='utf-8') as text_file:
+    with open(csv_output_file, 'w', newline='', encoding='utf-8') as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerow(['Page Number', 'Extracted Text'])
+
         while start_page < total_pages:
             end_page = min(start_page + batch_size, total_pages)
 
@@ -36,22 +37,17 @@ def process_pdf_in_batches(pdf_path, output_dir, text_output_file, batch_size=10
 
                 text = pytesseract.image_to_string(image_file)
 
-                text_file.write(f"\n\n{'=' * 80}\n")
-                text_file.write(f"Page {start_page + i + 1}\n")
-                text_file.write(f"{'=' * 80}\n\n")
-                text_file.write(text)
-                text_file.write("\n")
+                csv_writer.writerow([f'Page {start_page + i + 1}', text])
 
             start_page += batch_size
 
     print("Processing complete")
 
-
 # Parameters
 pdf_path = 'SHL_Cookbook_v3.pdf'
 output_dir = 'pdf_images'
-text_output_file = 'extracted_text.txt'
-batch_size = 10
-dpi = 200
+csv_output_file = 'extracted_text.csv'
+batch_size = 5
+dpi = 400
 
-process_pdf_in_batches(pdf_path, output_dir, text_output_file, batch_size, dpi)
+process_pdf_in_batches(pdf_path, output_dir, csv_output_file, batch_size, dpi)

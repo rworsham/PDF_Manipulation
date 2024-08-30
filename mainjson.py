@@ -1,5 +1,6 @@
 import pytesseract
 from pdf2image import convert_from_path
+from PIL import Image
 import PyPDF2
 import os
 import json
@@ -12,6 +13,7 @@ def extract_sections(text):
         'INGREDIENTS': re.compile(r'INGREDIENTS\b'),
         'NUTRITION FACTS': re.compile(r'NUTRITION FACTS\b'),
         'INSTRUCTIONS': re.compile(r'INSTRUCTIONS\b'),
+        'ADDITIONAL NOTES': re.compile(r'ADDITIONAL NOTES\b')
     }
 
     sections = {key: '' for key in section_patterns}
@@ -59,8 +61,9 @@ def process_pdf_in_batches(pdf_path, output_dir, json_output_file, batch_size, d
 
         print("Pages Processed")
         for i, page in enumerate(pages):
+            gray_page = page.convert('L')
             image_file = os.path.join(output_dir, f'page_{start_page + i + 1}.png')
-            page.save(image_file, 'PNG')
+            gray_page.save(image_file, 'PNG')
 
             text = pytesseract.image_to_string(image_file)
             extracted_sections = extract_sections(text)
@@ -71,6 +74,7 @@ def process_pdf_in_batches(pdf_path, output_dir, json_output_file, batch_size, d
                 'ingredients': extracted_sections.get('INGREDIENTS', '').strip(),
                 'nutrition_facts': extracted_sections.get('NUTRITION FACTS', '').strip(),
                 'instructions': extracted_sections.get('INSTRUCTIONS', '').strip(),
+                'additional notes': extracted_sections.get('ADDITIONAL NOTES', '').strip(),
             }
 
             all_pages_data.append(page_data)
